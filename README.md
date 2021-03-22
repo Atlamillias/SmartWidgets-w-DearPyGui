@@ -1,2 +1,2 @@
-# SmartWidgets-w-DearPyGui
+# SmartWidgets-wDearPyGui
 Object-oriented bindings for DearPyGui (https://github.com/hoffstadt/DearPyGui).
