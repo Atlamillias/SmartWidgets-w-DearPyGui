@@ -1,5 +1,7 @@
-from dearpygui.core import *
 from typing import Any, Callable, Union
+
+from dearpygui import core as dpg
+
 from .bases import SmartObject, ConfigProperty, SmartDependant
 
 
@@ -15,19 +17,18 @@ __all__ = [
     "Popup",
     "Tooltip",
     "TreeNode",
-    "ManagedColumns"
+    "ManagedColumns",
 ]
 
-# With the exception of Window, all others inherrit from 
+# With the exception of Window, all others inherrit from
 # SmartDependant ('parent', 'before', 'name/id', 'label')
 
-# This module needs defaults added to params, not __init__ bodies
 
 class Window(SmartObject):
     """
     Base class for window items. Windows are the most top-level items - they cannot
-    have parents, and must be the parent of all other items either directly (i.e. a 
-    button in a window) or indirectly (i.e. a button within a group that's within a 
+    have parents, and must be the parent of all other items either directly (i.e. a
+    button in a window) or indirectly (i.e. a button within a group that's within a
     window).
 
     Parameters:
@@ -47,10 +48,10 @@ class Window(SmartObject):
         x_pos, y_pos: The horizontal/vertical location on-screen for the top-left
         corner of the item (in pixels).
 
-        autosize: If True, the items' width and height will automatically scale to its 
+        autosize: If True, the items' width and height will automatically scale to its
         children. This also disables and removes the lower-right drag handle.
 
-        no_resize: If True, the items' lower-right drag handle will be disabled, 
+        no_resize: If True, the items' lower-right drag handle will be disabled,
         preventing it from being resized through the ui.
 
         no_title_bar: If True, the title bar is disabled for the item.
@@ -76,15 +77,16 @@ class Window(SmartObject):
         menubar: If True, the items' menubar will be disabled.
 
         no_close: If True, the items' close button in the top-right corner is removed,
-        preventing the item from being closed through the ui. 
+        preventing the item from being closed through the ui.
 
         no_background: If True, the item's background will be completely transparent.
         Title and menu bars remain unaffected.
 
         show: If False, the item will not be viewable.
-    
+
     """
-    _func = add_window
+
+    _func = dpg.add_window
     _addl_config = ["on_close"]
     _other_options = []
 
@@ -110,13 +112,13 @@ class Window(SmartObject):
 
     def __init__(
         self,
-        label: str  = None,
-        *,
         id: str = None,
-        width: int = None,
-        height: int = None,
-        x_pos: int = None,
-        y_pos: int = None,
+        *,
+        label: str = "",
+        width: int = 100,
+        height: int = 100,
+        x_pos: int = 0,
+        y_pos: int = 0,
         autosize: bool = False,
         no_resize: bool = False,
         no_title_bar: bool = False,
@@ -132,12 +134,12 @@ class Window(SmartObject):
         no_background: bool = False,
         show: bool = True,
         on_close: Callable = None,
-    ):
+        ):
         super().__init__(id, label)
-        self.width = width or 50
-        self.height = height or 50
-        self.x_pos = x_pos if x_pos is not None else 0
-        self.y_pos = y_pos if y_pos is not None else 0
+        self.width = width
+        self.height = height
+        self.x_pos = x_pos
+        self.y_pos = y_pos
         self.autosize = autosize
         self.no_resize = no_resize
         self.no_title_bar = no_title_bar
@@ -153,34 +155,24 @@ class Window(SmartObject):
         self.no_background = no_background
         self.show = show
 
-        self._on_close= on_close
+        self._on_close = on_close
 
     @property
     def pos(self):
-        config = get_item_configuration(self.id)
+        config = dpg.get_item_configuration(self.id)
         return config["x_pos"], config["y_pos"]
 
     @property
     def on_close(self):
         return self._on_close
 
-    def refresh(self):
-        """Deletes the item from dearpygui, and creates
-        a new item with an state identical to the previous one. 
-        Item is otherwise left unchanged. If the item is a parent
-        to other items, those items will be deleted and not restored."""
-        x, y = self.pos
-        delete_item(self.id)
-        self.x_pos, self.y_pos = x, y
-        return self.add()
-
     def start(self):
         """Starts dearpygui with <self> as the primary window."""
-        start_dearpygui(primary_window=self.id)
+        dpg.start_dearpygui(primary_window=self.id)
 
     def stop(self):
         """Stops the application."""
-        stop_dearpygui()
+        dpg.stop_dearpygui()
 
 
 class Child(SmartDependant):
@@ -198,7 +190,7 @@ class Child(SmartDependant):
 
         height: The items' vertical size (in pixels).
 
-        menubar: If True, the items' menubar will be disabled. 
+        menubar: If True, the items' menubar will be disabled.
 
         border: If False, the item will not have visible borders.
 
@@ -215,11 +207,11 @@ class Child(SmartDependant):
         is enabled regardless.
 
         parent: The name of the parenting item. Setting this after the item is registered
-        in dearpygui (<self.add>) will move the item to the end of the new parent's 
+        in dearpygui (<self.add>) will move the item to the end of the new parent's
         (value) stack.
 
         before: The id/name of the item, or the <SmartDependant> item, that
-        this item will be placed before in the parent's stack of items. Setting this 
+        this item will be placed before in the parent's stack of items. Setting this
         after the item is registered in dearpygui (<self.add>) will move the item before
         its new neighbor (value) within it's current parent, if possible.
 
@@ -227,9 +219,10 @@ class Child(SmartDependant):
         is hovered over.
 
         show: If False, the item will not be viewable.
-        
+
     """
-    _func = add_child
+
+    _func = dpg.add_child
 
     show = ConfigProperty()
     tip = ConfigProperty()
@@ -244,14 +237,14 @@ class Child(SmartDependant):
 
     def __init__(
         self,
-        *,
         id: str = None,
+        *,
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartDependant] = "",
         show: bool = True,
-        tip: str = None,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartDependant] = None,
-        width: int = None,
-        height: int = None,
+        tip: str = "",
+        width: int = 100,
+        height: int = 100,
         border: bool = True,
         autosize_x: bool = False,
         autosize_y: bool = False,
@@ -259,14 +252,14 @@ class Child(SmartDependant):
         horizontal_scrollbar: bool = False,
         menubar: bool = False,
         autosize: bool = False,
-    ):
-        super().__init__(id, label = None, parent = parent, before = before)
+        ):
+        super().__init__(id, label=None, parent=parent, before=before)
         self.show = show
-        self.tip = tip or ""
-        self.parent = parent or ""
-        self.before = before or ""
-        self.width = width or 0
-        self.height = height or 0
+        self.tip = tip
+        self.parent = parent
+        self.before = before
+        self.width = width
+        self.height = height
         self.border = border
         self.autosize_x = autosize_x
         self.autosize_y = autosize_y
@@ -282,7 +275,7 @@ class Child(SmartDependant):
     def autosize(self):
         if self.autosize_x and self.autosize_y:
             return True
-        
+
         return False
 
     @autosize.setter
@@ -290,7 +283,7 @@ class Child(SmartDependant):
         if not value:
             self.autosize_x = False
             self.autosize_y = False
-        
+
         self.autosize_x = True
         self.autosize_y = True
 
@@ -307,20 +300,20 @@ class Group(SmartDependant):
         id: A unique name for the item. This should not be declared as an instance
         attribute as it is handled by the superclass.
 
-        width: The items' horizontal size (in pixels). 
+        width: The items' horizontal size (in pixels).
 
         horizontal: If True, child items' will be aligned side-by-side 'in-line' with
         each other.
 
-        horizontal_spacing: The side-by-side distance (in pixels) between the items' 
+        horizontal_spacing: The side-by-side distance (in pixels) between the items'
         children.
 
         parent: The name of the parenting item. Setting this after the item is registered
-        in dearpygui (<self.add>) will move the item to the end of the new parent's 
+        in dearpygui (<self.add>) will move the item to the end of the new parent's
         (value) stack.
 
         before: The id/name of the item, or the <SmartDependant> item, that
-        this item will be placed before in the parent's stack of items. Setting this 
+        this item will be placed before in the parent's stack of items. Setting this
         after the item is registered in dearpygui (<self.add>) will move the item before
         its new neighbor (value) within it's current parent, if possible.
 
@@ -330,113 +323,113 @@ class Group(SmartDependant):
         show: If False, the item will not be viewable.
 
     """
-    _func = add_group
+
+    _func = dpg.add_group
+
     show = ConfigProperty()
     tip = ConfigProperty()
-    
     width = ConfigProperty()
     horizontal = ConfigProperty()
     horizontal_spacing = ConfigProperty()
 
     def __init__(
         self,
-        *,
         id: str = None,
+        *,
         show: bool = True,
-        tip: str = None,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartDependant] = None,
-        width: int = None,
+        tip: str = "",
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartDependant] = "",
+        width: int = 100,
         horizontal: bool = False,
-        horizontal_spacing: float = None
-    ):
-        super().__init__(id, label = None, parent = parent, before = before)
+        horizontal_spacing: float = None,
+        ):
+        super().__init__(id, label=None, parent=parent, before=before)
         self.show = show
-        self.tip = tip or ""
-        self.parent = parent or ""
-        self.before = before or ""
-        self.width = width or 0
+        self.tip = tip
+        self.parent = parent
+        self.before = before
+        self.width = width
         self.horizontal = horizontal
         self.horizontal_spacing = horizontal_spacing or -1.0
 
 
 class MenuBar(SmartDependant):
-    _func = add_menu_bar
+    _func = dpg.add_menu_bar
 
     show = ConfigProperty()
-    
+
     def __init__(
         self,
-        id: str = None,   
+        id: str = None,
         show: bool = True,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartObject] = None
-    ):
-        super().__init__(id, label = None, parent = parent, before = before)
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartObject] = "",
+        ):
+        super().__init__(id, label=None, parent=parent, before=before)
         self.show = show
-        self.parent = parent or ""
-        self.before = before or ""
+        self.parent = parent
+        self.before = before
 
     @property
     def height(self):
-        return get_item_configuration(self.id)['height']
+        return dpg.get_item_configuration(self.id)["height"]
 
 
 class Menu(SmartDependant):
-    _func = add_menu
+    _func = dpg.add_menu
+
     label = ConfigProperty()
     show = ConfigProperty()
-    
     enabled = ConfigProperty()
 
     def __init__(
         self,
         id: str = None,
-        label: str  = None,
+        *,
+        label: str = "",
         show: bool = True,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartDependant] = None,
-        enabled: bool = True
-    ):
-
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartDependant] = "",
+        enabled: bool = True,
+        ):
         super().__init__(id, label, parent, before)
-
         self.show = show
-        self.parent = parent or ""
-        self.before = before or ""
+        self.parent = parent
+        self.before = before
         self.enabled = enabled
 
 
 class TabBar(SmartDependant):
-    _func = add_tab_bar
+    _func = dpg.add_tab_bar
 
     reorderable = ConfigProperty()
     callback = ConfigProperty()
     callback_data = ConfigProperty()
     show = ConfigProperty()
-    
 
     def __init__(
         self,
         id: str = None,
+        *,
         reorderable: bool = False,
         callback: Callable = None,
         callback_data: Any = None,
         show: bool = True,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartObject] = None
-    ):
-        super().__init__(id, label = None, parent = parent, before = before)
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartObject] = "",
+        ):
+        super().__init__(id, label=None, parent=parent, before=before)
         self.reorderable = reorderable
         self.callback = callback
         self.callback_data = callback_data
         self.show = show
-        self.parent = parent or ""
-        self.before = before or ""
+        self.parent = parent
+        self.before = before
 
 
 class Tab(SmartDependant):
-    _func = add_tab
+    _func = dpg.add_tab
 
     closable = ConfigProperty()
     label = ConfigProperty()
@@ -446,36 +439,37 @@ class Tab(SmartDependant):
     trailing = ConfigProperty()
     no_tooltip = ConfigProperty()
     tip = ConfigProperty()
-    
+
     def __init__(
         self,
         id: str = None,
+        *,
         closable: bool = False,
-        label: str  = None,
+        label: str = "",
         show: bool = True,
         no_reorder: bool = False,
         leading: bool = False,
         trailing: bool = False,
         no_tooltip: bool = False,
-        tip: str = None,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartObject] = None
-    ):
-        super().__init__(id, label = None, parent = parent, before = before)
+        tip: str = "",
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartObject] = "",
+        ):
+        super().__init__(id, label=label, parent=parent, before=before)
         self.closable = closable
         self.show = show
         self.no_reorder = no_reorder
         self.leading = leading
         self.trailing = trailing
         self.no_tooltip = no_tooltip
-        self.tip = tip or ""
-        self.parent = parent or ""
-        self.before = before or ""
+        self.tip = tip
+        self.parent = parent
+        self.before = before
 
 
 class Popup(SmartDependant):
-    _func = add_popup
-    _addl_config = ['popupparent']
+    _func = dpg.add_popup
+    _addl_config = ["popupparent"]
 
     mousebutton = ConfigProperty()
     modal = ConfigProperty()
@@ -487,22 +481,23 @@ class Popup(SmartDependant):
         self,
         popupparent: Union[str, SmartObject],
         id: str = None,
-        mousebutton: int = None,
+        *,
+        mousebutton: int = 1,
         modal: bool = False,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartDependant] = None,
-        width: int = None,
-        height: int = None,
-        show: bool = True
-    ):
-        super().__init__(id, label = None, parent = parent, before = before)
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartDependant] = "",
+        width: int = 100,
+        height: int = 100,
+        show: bool = True,
+        ):
+        super().__init__(id, label=None, parent=parent, before=before)
         self.popupparent = popupparent
-        self.mousebutton = mousebutton or 1
+        self.mousebutton = mousebutton
         self.modal = modal
-        self.parent = parent or ""
-        self.before = before or ""
-        self.width = width or 0
-        self.height = height or 0
+        self.parent = parent
+        self.before = before
+        self.width = width
+        self.height = height
         self.show = show
 
     @property
@@ -511,8 +506,8 @@ class Popup(SmartDependant):
 
 
 class Tooltip(SmartDependant):
-    _func = add_tooltip
-    _addl_config = ['tipparent']
+    _func = dpg.add_tooltip
+    _addl_config = ["tipparent"]
 
     show = ConfigProperty()
 
@@ -520,13 +515,14 @@ class Tooltip(SmartDependant):
         self,
         tipparent: Union[str, SmartObject],
         id: str = None,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartDependant] = None,
-        show: bool = True
-    ):
-        super().__init__(id, label = None, parent = parent, before = before)
+        *,
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartDependant] = "",
+        show: bool = True,
+        ):
+        super().__init__(id, label=None, parent=parent, before=before)
         self._tipparent = tipparent
-        self.parent = parent or ""
+        self.parent = parent
         self.show = show
 
     @property
@@ -535,7 +531,7 @@ class Tooltip(SmartDependant):
 
 
 class TreeNode(SmartDependant):
-    _func = add_tree_node
+    _func = dpg.add_tree_node
 
     show = ConfigProperty()
     tip = ConfigProperty()
@@ -548,21 +544,21 @@ class TreeNode(SmartDependant):
     def __init__(
         self,
         id: str = None,
-        label: str  = None,
+        *,
+        label: str = "",
         show: bool = True,
-        tip: str = None,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartDependant] = None,
+        tip: str = "",
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartDependant] = "",
         default_open: bool = False,
         open_on_double_click: bool = False,
         open_on_arrow: bool = False,
         leaf: bool = False,
-        bullet: bool = False
-    ):
+        bullet: bool = False,
+        ):
         super().__init__(id, label, parent, before)
-        
         self.show = show
-        self.tip = tip or ""
+        self.tip = tip
         self.default_open = default_open
         self.open_on_double_click = open_on_double_click
         self.open_on_arrow = open_on_arrow
@@ -571,7 +567,7 @@ class TreeNode(SmartDependant):
 
 
 class ManagedColumns(SmartDependant):
-    _func = add_managed_columns
+    _func = dpg.add_managed_columns
     columns = ConfigProperty()
     border = ConfigProperty()
     show = ConfigProperty()
@@ -582,11 +578,10 @@ class ManagedColumns(SmartDependant):
         columns: int = None,
         border: bool = False,
         show: bool = True,
-        parent: Union[str, SmartObject] = None,
-        before: Union[str, SmartObject] = None
-    ):
-        super().__init__(id, label = None, parent = parent, before = before)
+        parent: Union[str, SmartObject] = "",
+        before: Union[str, SmartObject] = "",
+        ):
+        super().__init__(id, label=None, parent=parent, before=before)
         self.columns = columns if columns is not None else 0
         self.border = border
         self.show = show
-   
