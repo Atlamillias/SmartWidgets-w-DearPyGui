@@ -20,7 +20,7 @@ __all__ = [
     "ManagedColumns",
 ]
 
-# With the exception of Window, all others inherrit from
+# With the exception of Window, all others inherit from
 # SmartDependant ('parent', 'before', 'name/id', 'label')
 
 
@@ -87,7 +87,6 @@ class Window(SmartObject):
 
     _func = dpg.add_window
     _addl_config = ["on_close"]
-    _other_options = []
 
     width = ConfigProperty()
     height = ConfigProperty()
@@ -290,7 +289,7 @@ class Child(SmartDependant):
 class Group(SmartDependant):
     """
     Base class for Group items. Groups are containers (like Child items) with limited
-    features. They allow more control over the layout of the items they contain.
+    features but allow  for more control over the layout of the items they contain.
 
     Parameters:
 
@@ -299,7 +298,7 @@ class Group(SmartDependant):
         id: A unique name for the item. This should not be declared as an instance
         attribute as it is handled by the superclass.
 
-        width: The items' horizontal size (in pixels).
+        width: the horizontal size of all children within this item.
 
         horizontal: If True, child items' will be aligned side-by-side 'in-line' with
         each other.
@@ -319,7 +318,7 @@ class Group(SmartDependant):
         tip: If provided, a tooltip is shown with the provided value when the item
         is hovered over.
 
-        show: If False, the item will not be viewable.
+        show: If False, this item will not be viewable.
 
     """
 
@@ -339,7 +338,7 @@ class Group(SmartDependant):
         tip: str = "",
         parent: Union[str, SmartObject] = "",
         before: Union[str, SmartDependant] = "",
-        width: int = 100,
+        width: int = 0,
         horizontal: bool = False,
         horizontal_spacing: float = None,
         ):
@@ -478,7 +477,9 @@ class Popup(SmartDependant):
 
     def __init__(
         self,
-        popupparent: Union[str, SmartObject],
+        # popupparent is actually required
+        # Default helps with debug testing
+        popupparent: Union[str, SmartObject] = None,
         id: str = None,
         *,
         mousebutton: int = 1,
@@ -490,7 +491,7 @@ class Popup(SmartDependant):
         show: bool = True,
         ):
         super().__init__(id, label=None, parent=parent, before=before)
-        self.popupparent = popupparent
+        self._popupparent = popupparent
         self.mousebutton = mousebutton
         self.modal = modal
         self.parent = parent
@@ -501,7 +502,7 @@ class Popup(SmartDependant):
 
     @property
     def popupparent(self):
-        return self.popupparent
+        return self._popupparent
 
 
 class Tooltip(SmartDependant):
@@ -512,7 +513,9 @@ class Tooltip(SmartDependant):
 
     def __init__(
         self,
-        tipparent: Union[str, SmartObject],
+        # tipparent is actually required
+        # Default helps with debug testing
+        tipparent: Union[str, SmartObject] = None,
         id: str = None,
         *,
         parent: Union[str, SmartObject] = "",

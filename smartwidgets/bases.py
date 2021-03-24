@@ -1,9 +1,8 @@
 from __future__ import annotations
+
 from typing import Union, Callable
 
 from dearpygui.core import *
-
-from smartwidgets import smartitem, SMARTITEMS
 
 
 __all__ = [
@@ -15,11 +14,15 @@ __all__ = [
 ]
 
 
+_smartitems = {}  # {"item string name": SmartObject}
+_smartconfig = {}
+
+
 # these cannot be changed via core.configure_item
 # or fetched with core.get_item_configuration
 # so they require specific handling
 # and are common enough to warrant a constant
-SPECIAL_CONFIG = {
+_SPECIAL_CONFIG = {
     # option: (getter, (setter, {**kwargs}))
     # getters so far only have required 1 argument (item name/id)
     'callback': (get_item_callback, (set_item_callback, {
@@ -32,6 +35,15 @@ SPECIAL_CONFIG = {
         "callback_data": "callback_data"
     })),
 }
+
+
+def smartitem(id: str):
+    """Convenience function. Returns the smartitem object in 
+    <SMARTITEMS> if it exists, returning <None> otherwise."""
+    if id in _smartitems:
+        return _smartitems[id]
+    
+    return None
 
 
 class ConfigProperty:
@@ -52,8 +64,8 @@ class ConfigProperty:
             # been changed externally
             # for this reason, __dict__ needs to be used
             # instead of __set/getitem__
-            if self.name in SPECIAL_CONFIG:
-                value = SPECIAL_CONFIG[self.name][0](instance.id)
+            if self.name in _SPECIAL_CONFIG:
+                value = _SPECIAL_CONFIG[self.name][0](instance.id)
             else:
                 value = get_item_configuration(instance.id)[self.name]
 
@@ -73,8 +85,8 @@ class ConfigProperty:
 
         # dearpygui config
         if instance.is_valid:  # exists in dpg
-            if self.name in SPECIAL_CONFIG:
-                setter, kwargs = SPECIAL_CONFIG[self.name][1]
+            if self.name in _SPECIAL_CONFIG:
+                setter, kwargs = _SPECIAL_CONFIG[self.name][1]
                 for arg, val in kwargs.copy().items():
                     kwargs[arg] = instance.__dict__[val]
 
@@ -98,13 +110,6 @@ class _SmartObject:
         _generator_id: Used as reference for generating item id's 
         if one isn't provided.
 
-        _options: Cache for <cls.options> - populated on first 
-        instance using <_other_options> and <_addl_config>.
-
-        _option_desc: Descriptors used to identify which attrs are 
-        "config" attrs. Attributes using these descriptors will be
-        sent to dearpygui as config options for item setup.
-
         _addl_config: Contains "config" attributes that don't use a 
         custom descriptor, but are necessary for dearpygui item
         setup. These are either defined on <_SmartObject> subclasses 
@@ -112,34 +117,26 @@ class _SmartObject:
         are only used for initial widget setup and are more 'private'. 
         Attributes here will probably be fairly unique to the item.
 
-        _common_config: Same as <_addl_config>. Stores configuration 
-        attributes that will be most common between items. 
-        Mid-level-subclasses will probably overload this. Remember to
-        nclude the inherited classes' <_common_config> if overloaded.
-
 
     The purpose of this class is to set up and build the Python 
     representation of a dearpygui item, as well as the item in dearpygui 
     itself. It is not supposed to be instantiated directly - only 
-    subclassed. Arguments that are specified in <_common_config>, 
-    <_addl_config>, or are declared as class properties using a descriptor 
-    class in <_option_desc>, are passed to <_func>. 
+    subclassed. Arguments that are specified in <_addl_config>, or are 
+    declared as class properties using a descriptor class in 
+    <_option_desc>, are passed to <_func>. 
 
     """
 
     _func: Callable = None  
     _generator_id: int = None
 
-    _options: list[str] = None
-    _option_desc: list = [ConfigProperty]
-    _addl_config: list[str] = []  # internally expects an iterable so not None
-    _common_config: list[str] = []  # internally expects an iterable so not None
+    _addl_config: list[str] = []  # internally expects an iterable so not None  # internally expects an iterable so not None
 
     def __init__(self, id: Union[str, None] = None, label: Union[str, None] = None):
         self.id = id if id is not None else self._make_id()
-        self.label = self.id if label is None else label
+        self.label = self.id if not label else label
 
-        SMARTITEMS[self.id] = self
+        _smartitems[self.id] = self
 
     def __getitem__(self, key):
         return self[key]
@@ -158,10 +155,10 @@ class _SmartObject:
 
     def __repr__(self):
         try:
-            return f'<{self.__class__.__name__}({self.id})>'
+            return f'{self.__class__.__name__}'
         except AttributeError:
             self.id = self._make_id()
-            return f'<{self.__class__.__name__}({self.id})>'
+            return f'{self.__class__.__name__}'
 
     @classmethod
     def _make_id(cls):
@@ -177,22 +174,23 @@ class _SmartObject:
     @classmethod
     def options(cls):
         """
-        Returns a list of the options used by dearpygui for item setup. 
+        Returns a tuple of the options used by dearpygui for item setup. 
         Most of them can be changed after the item has been added.
         """
-        # cache
-        if not cls._options:
-            cls._options = [
-                optn for optn, value in cls.__dict__.items()
-                if type(value) in cls._option_desc
+
+        # constructs a list of options used
+        # from the classes it inherits
+        if cls not in _smartconfig:
+            chain = [*cls.mro()][:-2]  # exclude <object> and <_SmartObject>
+            config_optns = [
+                attr for cls in chain for attr, val in cls.__dict__.items() 
+                if isinstance(val, ConfigProperty)
                 ]
+            config_optns += cls._addl_config
 
-            [
-                cls._options.append(optn) for optn in 
-                [*cls._addl_config, *cls._common_config]
-            ]
+            _smartconfig[cls] = tuple(config_optns)
 
-        return cls._options
+        return _smartconfig[cls]
 
     @property
     def is_valid(self):
@@ -282,7 +280,7 @@ class SmartObject(_SmartObject):
         delete_item(self.id)
 
         try:
-            SMARTITEMS.pop(self.id)
+            _smartitems.pop(self.id)
         finally:
             del self
 
@@ -309,7 +307,7 @@ class SmartDependant(SmartObject):
         after the item is registered in dearpygui (<self.add>) will move the item near its
         new neighbor (value) within it's current parent, if possible.
     """
-    _common_config = ["before", "parent"]
+    _addl_config = ["before", "parent"]
 
     def __init__(
         self, 
@@ -365,7 +363,7 @@ class SmartDependant(SmartObject):
                     sitem.delete()
 
         try:
-            SMARTITEMS.pop(self.id)
+            _smartitems.pop(self.id)
         finally:
             delete_item(self.id)
 

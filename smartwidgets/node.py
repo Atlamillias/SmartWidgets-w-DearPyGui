@@ -1,6 +1,8 @@
-from .bases import SmartDependant, ConfigProperty
 from typing import Any, Callable
-import dearpygui.core as dpg
+
+from dearpygui import core as dpg
+
+from .bases import SmartDependant, ConfigProperty
 
 
 __all__ = [

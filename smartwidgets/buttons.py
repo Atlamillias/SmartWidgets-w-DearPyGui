@@ -1,6 +1,8 @@
-from .bases import SmartDependant, ConfigProperty
 from typing import Union, Callable, Any
+
 from dearpygui import core as dpg
+
+from .bases import SmartDependant, ConfigProperty
 
 
 class Button(SmartDependant):
@@ -21,8 +23,8 @@ class Button(SmartDependant):
     def __init__(
         self, 
         id: str = None, 
+        *,
         label: str = None,
-
         small: bool = False,
         arrow: bool = False,
         direction: int = None,
@@ -36,7 +38,12 @@ class Button(SmartDependant):
         show: bool = True,
         enabled: bool = True,
         ):
-        super().__init__(id, label, parent, before)
+        super().__init__(
+            id=id, 
+            label=label, 
+            parent=parent, 
+            before=before
+            )
         self.small = small
         self.arrow = arrow  
         self.direction = direction or 0

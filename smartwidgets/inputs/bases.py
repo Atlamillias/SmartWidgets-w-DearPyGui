@@ -4,20 +4,20 @@ from ..bases import SmartObject, ConfigProperty, SmartDependant
 
 
 class SmartInput(SmartDependant):
-    _common_config = ["before", "parent", "default_value"]
+    _addl_config = ["before", "parent", "default_value"]
 
     def __init__(
         self,
         *,
         # superclass/dearpygui args
-        id: str = None, 
-        label: str = None, 
+        id: str = None,
+        label: str = None,
         parent: Union[str, SmartObject] = None,
         before: Union[str, SmartDependant] = None,
-        ):
+    ):
 
         super().__init__(id, label, parent=parent, before=before)
-    
+
     def __enter__(self):  # overloaded
         # context manager isn't needed for non-parenting widgets, and
         # could be confusing
@@ -45,35 +45,36 @@ class _Input(SmartInput):
     enabled = ConfigProperty()
     tip = ConfigProperty()
     show = ConfigProperty()
+    label = ConfigProperty()
 
     def __init__(
-        self, 
+        self,
         id: str = None,
-        *, 
+        *,
         source: str = None,
-        label: str = None, 
-        parent: Union[str, SmartObject] = None, 
-        before: Union[str, SmartDependant] = None, 
-        default_value = None,
-        min_value = None, 
-        max_value = None, 
+        label: str = None,
+        parent: Union[str, SmartObject] = None,
+        before: Union[str, SmartDependant] = None,
+        default_value=None,
+        min_value=None,
+        max_value=None,
         min_clamped: bool = False,
         max_clamped: bool = False,
         width: int = None,
-        callback: Callable = None, 
-        callback_data: Any = None, 
-        enabled: bool = True, 
+        callback: Callable = None,
+        callback_data: Any = None,
+        enabled: bool = True,
         on_enter: bool = False,
-        tip: str = None, 
+        tip: str = None,
         show: bool = True,
         readonly: bool = False,
-        ):
+    ):
         super().__init__(
-            id=id, 
-            label=label, 
-            parent=parent, 
-            before=before, 
-            )
+            id=id,
+            label=label,
+            parent=parent,
+            before=before,
+        )
 
         self.width = width
         self.min_value = min_value
@@ -106,15 +107,15 @@ class _Slider(SmartInput):
     show = ConfigProperty()
 
     def __init__(
-        self, 
-        *, 
-        id: str = None, 
-        label: str = None, 
-        parent: Union[str, SmartObject] = None, 
-        before: Union[str, SmartDependant] = None, 
-        default_value = None,
-        min_value = None,
-        max_value = None,
+        self,
+        *,
+        id: str = None,
+        label: str = None,
+        parent: Union[str, SmartObject] = None,
+        before: Union[str, SmartDependant] = None,
+        default_value=None,
+        min_value=None,
+        max_value=None,
         width: int = None,
         callback: Callable = None,
         callback_data: Any = None,
@@ -125,13 +126,13 @@ class _Slider(SmartInput):
         tip: str = None,
         show: bool = True,
         format: str = None
-        ):
+    ):
         super().__init__(
-            id=id, 
-            label=label, 
-            parent=parent, 
+            id=id,
+            label=label,
+            parent=parent,
             before=before,
-            )
+        )
 
         self._default_value = default_value
         self.width = width
@@ -153,15 +154,15 @@ class _Drag(_Slider):  # 1 argument difference between drag and slider items
 
     def __init__(
         self,
-        id: str = None, 
-        *, 
-        label: str = None, 
-        parent: Union[str, SmartObject] = None, 
+        id: str = None,
+        *,
+        label: str = None,
+        parent: Union[str, SmartObject] = None,
         before: Union[str, SmartDependant] = None,
-        default_value = None,
-        speed = None, 
-        min_value = None,
-        max_value = None,
+        default_value=None,
+        speed=None,
+        min_value=None,
+        max_value=None,
         width: int = None,
         callback: Callable = None,
         callback_data: Any = None,
@@ -172,11 +173,11 @@ class _Drag(_Slider):  # 1 argument difference between drag and slider items
         tip: str = None,
         show: bool = True,
         format: str = None
-        ):
+    ):
         super().__init__(
-            id=id, 
-            label=label, 
-            parent=parent, 
+            id=id,
+            label=label,
+            parent=parent,
             before=before,
             default_value=default_value,
             width=width,
@@ -186,12 +187,11 @@ class _Drag(_Slider):  # 1 argument difference between drag and slider items
             callback_data=callback_data,
             enabled=enabled,
             source=source,
-            speed=speed,
             no_input=no_input,
             clamped=clamped,
             tip=tip,
             show=show,
             format=format,
-            )
+        )
 
         self.speed = speed
