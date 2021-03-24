@@ -7,7 +7,6 @@ Typical usage of SmartWidgets is almost identical to Dearpygui. A big difference
 While I plan on expanding this section in detail, here's an example:
 
 
-Python
 ```
 from smartwidgets import *
 
@@ -73,12 +72,10 @@ with Window() as main:
 main.start()
 ```
 
-![Alt text](images/demo1.png)
-
 
 You can perform setup on an item (configure it) beforehand...
 
-Python
+
 ```
 
 main = Window(label="TestWindow", height=300)
@@ -100,7 +97,7 @@ main.end()
 
 The **name** argument commonly used in DearPyGui has been replaced with **id**. An items' **id** is automatically generated, but you can pass one in yourself if you want.
 
-Python
+
 ```
 
 a_button = Button("Just a button")
