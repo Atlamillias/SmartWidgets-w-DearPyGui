@@ -2,7 +2,7 @@ from typing import Any, Callable, Union
 
 from dearpygui import core as dpg
 
-from .bases import SmartObject, ConfigProperty, SmartDependant
+from .bases import ConfigProperty, SmartObject, SmartDependant
 
 
 __all__ = [
@@ -569,7 +569,12 @@ class TreeNode(SmartDependant):
 
 
 class ManagedColumns(SmartDependant):
+    """A layout item used for table-like organization. Any item placed within this
+    one will be placed in the first row that has vacant columns - filling them from
+    left to right. If there aren't any vacant columns in existing rows, a new row
+    will be created."""
     _func = dpg.add_managed_columns
+
     columns = ConfigProperty()
     border = ConfigProperty()
     show = ConfigProperty()
@@ -577,13 +582,63 @@ class ManagedColumns(SmartDependant):
     def __init__(
         self,
         id: str = None,
-        columns: int = None,
+        columns: int = 0,
+        *,
         border: bool = False,
         show: bool = True,
         parent: Union[str, SmartObject] = "",
         before: Union[str, SmartObject] = "",
+        padding: int = 5,
         ):
         super().__init__(id, label=None, parent=parent, before=before)
-        self.columns = columns if columns is not None else 0
+        self.columns = columns
         self.border = border
         self.show = show
+
+        self.padding = padding  # width, not height
+        self._width = 0.0
+        self._columns_width = {col: 0.0 for col in range(self.columns)}
+        
+
+    def __getitem__(self, key: int):
+        if self.is_valid:
+            self._columns_width[key] = dpg.get_managed_column_width(self.id, key)
+
+        return self._columns_width[key]
+
+    def __setitem__(self, key: int, value: Union[int, float]):
+        if self.is_valid:
+            dpg.set_managed_column_width(self.id, key, value)
+
+        self._columns_width[key] = value
+
+    @property
+    def width(self):
+        """Returns the combined MODIFIED column widths for the item. Widths set 
+        automatically though DearPyGui have an internal value of 0.0."""
+        if not self.is_valid:
+            raise Exception(
+                "Column widths cannot be configured if the dearpygui item doesn't exist."
+            )
+
+        self._columns_width = {
+            col: dpg.get_managed_column_width(self.id, col) 
+            for col in range(self.columns)
+        }
+        return sum(self._columns_width.values())
+
+    @width.setter
+    def width(self, value: Union[int, float]):
+        """Sets the width of each individual column so that the sums of their
+        width equal <value>."""
+        if not self.is_valid:
+            raise Exception(
+                "Column widths cannot be configured if the dearpygui item doesn't exist."
+            )
+
+        value = float(value) / self.columns
+
+        for col in self._columns_width:
+            adj_val = value + self.padding
+            dpg.set_managed_column_width(self.id, col, adj_val)
+            self._columns_width[col] = adj_val
