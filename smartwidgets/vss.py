@@ -25,14 +25,11 @@ class ValueStorageProxy:
     def __get__(self):
         return self.__call__
 
-    def __set__(self, instance, value):
-        dpg.set_value(self.key, value)
-
     def __repr__(self):
         return f"{self.__class__.__qualname__}"
 
     def __str__(self):
-        return {self.key: self._value}
+        return str({self.key: self._value})
 
     @classmethod
     def _keygen(cls):
@@ -48,3 +45,7 @@ class ValueStorageProxy:
     @property
     def key(self):
         return self._key
+
+    def set(self, value):
+        dpg.set_value(self._key, value)
+
