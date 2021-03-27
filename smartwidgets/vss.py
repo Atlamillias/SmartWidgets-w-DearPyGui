@@ -30,7 +30,7 @@ class ValueStorageProxy:
         return f"{self.__class__.__qualname__}"
 
     def __str__(self):
-        return str({self.key: self._value})
+        return str({self.key: self()})
 
     @classmethod
     def _keygen(cls):
