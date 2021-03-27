@@ -447,6 +447,7 @@ class InputText(SmartInput):
     multiline = ConfigProperty()
     no_spaces = ConfigProperty()
     uppercase = ConfigProperty()
+    label = ConfigProperty()
     tab_input = ConfigProperty()
     decimal = ConfigProperty()
     hexadecimal = ConfigProperty()
