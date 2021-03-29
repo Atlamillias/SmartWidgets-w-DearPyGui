@@ -133,7 +133,7 @@ class _SmartObject:
     _addl_config: list[str] = []  # internally expects an iterable so not None  # internally expects an iterable so not None
 
     def __init__(self, id: Union[str, None] = None, label: Union[str, None] = None):
-        self.id = id if id is not None else self._make_id()
+        self.id = self._make_id() if id is None else id
         self.label = self.id if not label else label
 
         _smartitems[self.id] = self
@@ -168,6 +168,8 @@ class _SmartObject:
 
         while does_item_exist(id := f'{cls.__name__}<{cls._generator_id}>'):
             cls._generator_id += 1
+
+        cls._generator_id += 1
 
         return id
 
