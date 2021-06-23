@@ -1,3 +1,5 @@
+## Note: This can only be used with dearpygui 0.6.
+
 # SmartWidgets w/DearPyGui
 Object-oriented bindings for DearPyGui (https://github.com/hoffstadt/DearPyGui). It is fully compatable with everything within the DearPyGui library. All items accept the exact same arguments (plus a few), have nearly the same default values, and are used similarly.
 
